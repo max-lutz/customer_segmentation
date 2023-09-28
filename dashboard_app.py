@@ -11,8 +11,8 @@ import streamlit as st
 
 # configuration of the page
 st.set_page_config(layout="wide")
-# SPACER = .2
-# ROW = 1
+SPACER = .2
+ROW = 1
 
 
 def hide_streamlit_header_footer():
@@ -28,14 +28,26 @@ def hide_streamlit_header_footer():
 
 
 def main():
-    st.title('Instacart users dashboard')
-    st.markdown("""
-                This app allows you scrape city bike information from https://api.citybik.es/v2/
-                * The code can be accessed at [code](https://github.com/max-lutz/citybike_web_scraper).
-                * You can select a country in the sidebar and download the data as csv once all the information have been retireved.
-                """)
 
     hide_streamlit_header_footer()
+
+    hs_1, title, hs_2, header_button, hs_3 = st.columns((.05, ROW, .05, ROW*2, .05))
+    with title:
+        st.title('Instacart sales dashboard')
+
+    with header_button:
+        button_1, button_2, button_3, button_4 = st.columns(4)
+        with button_1:
+            week = st.selectbox('Week', ["Week 1", "Week 2"])
+
+        with button_2:
+            report = st.selectbox('Report', ["Sales", "Customer"])
+
+        with button_3:
+            department = st.selectbox('Department', ["All", "Department 1"])
+
+        with button_4:
+            ailse = st.selectbox('Aisle', ["All", "Aisle 1"])
 
 
 if __name__ == "__main__":
