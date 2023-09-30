@@ -10,6 +10,8 @@ import pandas as pd
 import streamlit as st
 
 import plotly.graph_objects as go
+import plotly.express as px
+
 
 # configuration of the page
 st.set_page_config(layout="wide")
@@ -35,7 +37,7 @@ def hide_streamlit_header_footer():
 
 
 def plot_metric(number, delta_number, title):
-    config = {'staticPlot': True}
+    config = {'staticPlot': True, 'displayModeBar': False}
 
     fig = go.Figure()
     fig.add_trace(go.Indicator(
@@ -90,21 +92,37 @@ def main():
     st.write("")
     st.write("")
 
-    col_1, _, col_2 = st.columns((ROW, .05, ROW))
-    with col_1:
-        _, col_1_1, _, col_1_2, _, col_1_3, _ = st.columns((0.1, ROW, .01, ROW, 0.1, ROW, 0.1))
-        with col_1_1:
+    row_1_col_1, _, row_1_col_2 = st.columns((ROW, .05, ROW))
+    with row_1_col_1:
+        _, row_1_col_1_1, _, row_1_col_1_2, _, row_1_col_1_3, _ = st.columns((0.1, ROW, .01, ROW, 0.1, ROW, 0.1))
+        with row_1_col_1_1:
             plot_metric(len(df_orders["user_id"].unique()), len(df_orders_prev["user_id"].unique()), "Total users")
 
             # st.write("Take inspiration from https://github.com/andfanilo/social-media-tutorials/blob/master/20230816-stdashboard/streamlit_app.py")
             # st.write("and https://www.klipfolio.com/resources/dashboard-examples/sales")
-        with col_1_2:
+        with row_1_col_1_2:
             plot_metric(len(df_orders["order_id"].unique()), len(df_orders_prev["order_id"].unique()), "Total orders")
 
-        with col_1_3:
+        with row_1_col_1_3:
             plot_metric(df_orders["basket_size"].mean(), df_orders_prev["basket_size"].mean(), "Average basket size")
 
     st.write()
+    row_2_col_1, _, row_2_col_2,  _, row_2_col_3 = st.columns((ROW, .05, ROW, .05, ROW))
+    with row_2_col_1:
+        df_ = df_orders.groupby("date").order_number.count().reset_index()
+        df_["date"] = pd.to_datetime(df_["date"]).dt.day_name()
+
+        df_prev_ = df_orders_prev.groupby("date").order_number.count().reset_index()
+        df_prev_["date"] = pd.to_datetime(df_prev_["date"]).dt.day_name()
+
+        data = [
+            go.Bar(x=df_['date'], y=df_['order_number'], name="This week"),
+            go.Scatter(x=df_prev_['date'], y=df_prev_['order_number'], name="Previous week")
+        ]
+
+        fig = go.Figure(data=data, layout=go.Layout(title='Average daily orders'))
+        # fig = px.bar(df_, y="order_number", x="date", title="Average daily orders")
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     st.write(df_orders)
     st.write(df_orders_prev)
