@@ -24,6 +24,19 @@ def load_data(file_path):
     return pd.read_csv(file_path)
 
 
+@st.cache_data
+def get_occurrences(df_orders, df_products, df_aisles, df_departments):
+    l = df_orders["product_id"].to_list()
+    l = [int(item) for sublist in l for item in sublist[1:-1].replace(" ", "").split(",")]
+    df_product_occurrence = pd.DataFrame(l, columns=["product_id"])
+    df_product_occurrence = df_product_occurrence.value_counts().reset_index()
+    df_product_occurrence = df_product_occurrence.rename(columns={0: "count"})
+    df_product_occurrence = df_product_occurrence.merge(df_products, on=["product_id"])
+    df_product_occurrence = df_product_occurrence.merge(df_aisles, on=["aisle_id"])
+    df_product_occurrence = df_product_occurrence.merge(df_departments, on=["department_id"])
+    return df_product_occurrence
+
+
 def hide_streamlit_header_footer():
     hide_st_style = """
             <style>
@@ -69,6 +82,10 @@ def main():
     with title:
         st.title('Instacart sales dashboard')
 
+    df_products = load_data(f"data/raw/products.csv")
+    df_aisles = load_data(f"data/raw/aisles.csv")
+    df_departments = load_data(f"data/raw/departments.csv")
+
     with header_button:
         button_1, button_2, button_3, button_4 = st.columns(4)
         with button_1:
@@ -91,6 +108,9 @@ def main():
 
     st.write("")
     st.write("")
+
+    week_occurrences = get_occurrences(df_orders, df_products, df_aisles, df_departments)
+    week_occurrences_prev = get_occurrences(df_orders_prev, df_products, df_aisles, df_departments)
 
     row_1_col_1, _, row_1_col_2 = st.columns((ROW, .05, ROW))
     with row_1_col_1:
@@ -121,7 +141,37 @@ def main():
         ]
 
         fig = go.Figure(data=data, layout=go.Layout(title='Average daily orders'))
-        # fig = px.bar(df_, y="order_number", x="date", title="Average daily orders")
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    with row_2_col_2:
+        df_top_deps = pd.DataFrame(week_occurrences.groupby("department")["count"].sum()).reset_index()
+        df_top_deps = df_top_deps.sort_values("count", ascending=False)[0:5]
+
+        df_top_deps_prev = pd.DataFrame(week_occurrences_prev.groupby("department")["count"].sum()).reset_index()
+        df_top_deps = df_top_deps.merge(df_top_deps_prev, how="left", on="department", suffixes=["", "_prev"])
+
+        data = [
+            go.Bar(x=df_top_deps['department'], y=df_top_deps['count'], name="This week"),
+            go.Scatter(x=df_top_deps['department'], y=df_top_deps['count_prev'], name="Previous week")
+        ]
+
+        fig = go.Figure(data=data, layout=go.Layout(title='Top five departments'))
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    st.write(week_occurrences)
+    with row_2_col_3:
+        df_top_deps = pd.DataFrame(week_occurrences.groupby("product_name")["count"].sum()).reset_index()
+        df_top_deps = df_top_deps.sort_values("count", ascending=False)[0:5]
+
+        df_top_deps_prev = pd.DataFrame(week_occurrences_prev.groupby("product_name")["count"].sum()).reset_index()
+        df_top_deps = df_top_deps.merge(df_top_deps_prev, how="left", on="product_name", suffixes=["", "_prev"])
+
+        data = [
+            go.Bar(x=df_top_deps['product_name'], y=df_top_deps['count'], name="This week"),
+            go.Scatter(x=df_top_deps['product_name'], y=df_top_deps['count_prev'], name="Previous week")
+        ]
+
+        fig = go.Figure(data=data, layout=go.Layout(title='Top five products'))
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     st.write(df_orders)
