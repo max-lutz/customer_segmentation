@@ -89,7 +89,17 @@ if __name__ == "__main__":
     df_orders = pd.read_csv("../data/raw/orders.csv")
 
     df = prepare_orders_df(df_orders, df_order_products)
-
     save_weekly_orders(df)
+
+    # Process df_new_users
+    logger.debug(f"Processing df_new_users")
+    df_new_users = df[df["order_number"] == 1][["user_id", "date"]
+                                               ].sort_values(["date", "user_id"]).reset_index(drop=True)
+    df_new_users.to_csv("new_users.zip", compression={'method': 'zip', 'archive_name': 'new_users.csv'})
+
+    # Process df_volumes
+    df_volumes = df.groupby("date").agg(order_number=("order_number", "count"),
+                                        basket_size=("basket_size", "sum")).reset_index()
+    df_volumes.to_csv("volumes.zip", compression={'method': 'zip', 'archive_name': 'volumes.csv'})
 
     # Process df_users
