@@ -74,6 +74,21 @@ def plot_metric(number, delta_number, title):
     st.plotly_chart(fig, use_container_width=True, config=config)
 
 
+def get_time_of_day(hour):
+    if (hour <= 6):
+        return "night"
+    elif (hour <= 9):
+        return "early morning"
+    elif (hour <= 12):
+        return "morning"
+    elif (hour <= 15):
+        return "early afternoon"
+    elif (hour <= 18):
+        return "afternoon"
+    elif (hour > 18):
+        return "evening"
+
+
 def main():
 
     hide_streamlit_header_footer()
@@ -177,16 +192,19 @@ def main():
 
     with row_2_col_3:
         df_ = df_orders.groupby("datetime").order_number.count().reset_index()
-        df_["time"] = pd.to_datetime(df_["datetime"]).dt.time
-        df_["time_of_day"]
-        st.write(df_)
+        df_["hour"] = pd.to_datetime(df_["datetime"]).dt.hour
+        df_["time_of_day"] = df_["hour"].apply(lambda x: get_time_of_day(x))
+        df_ = df_.groupby("time_of_day").agg({"order_number": "sum", "hour": "max"}).reset_index().sort_values("hour")
 
         df_prev_ = df_orders_prev.groupby("datetime").order_number.count().reset_index()
-        df_prev_["time"] = pd.to_datetime(df_prev_["datetime"]).dt.time
+        df_prev_["hour"] = pd.to_datetime(df_prev_["datetime"]).dt.hour
+        df_prev_["time_of_day"] = df_prev_["hour"].apply(lambda x: get_time_of_day(x))
+        df_prev_ = df_prev_.groupby("time_of_day").agg(
+            {"order_number": "sum", "hour": "max"}).reset_index().sort_values("hour")
 
         data = [
-            go.Bar(x=df_['time'], y=df_['order_number'], name="This week"),
-            go.Scatter(x=df_prev_['time'], y=df_prev_['order_number'], name="Previous week")
+            go.Bar(x=df_['time_of_day'], y=df_['order_number'], name="This week"),
+            go.Scatter(x=df_prev_['time_of_day'], y=df_prev_['order_number'], name="Previous week")
         ]
 
         fig = go.Figure(data=data, layout=go.Layout(title='time of order'))
