@@ -95,11 +95,26 @@ if __name__ == "__main__":
     logger.debug(f"Processing df_new_users")
     df_new_users = df[df["order_number"] == 1][["user_id", "date"]
                                                ].sort_values(["date", "user_id"]).reset_index(drop=True)
-    df_new_users.to_csv("new_users.zip", compression={'method': 'zip', 'archive_name': 'new_users.csv'})
+    df_new_users.to_csv("../data/processed/new_users.zip",
+                        compression={'method': 'zip', 'archive_name': 'new_users.csv'})
+
+    # Process df_engagement
+    logger.debug(f"Processing df_new_users")
+    df_new_users = df[["user_id", "days_since_prior_order"]].sort_values(
+        ["days_since_prior_order", "user_id"]).reset_index(drop=True)
+    df_new_users.to_csv("../data/processed/engagement.zip",
+                        compression={'method': 'zip', 'archive_name': 'engagement.csv'})
+
+    # Process df_retention
+    logger.debug(f"Processing df_retention")
+    df_retention = df[["user_id", "date"]].sort_values(["date", "user_id"]).reset_index(drop=True)
+    df_retention.to_csv("../data/processed/retention.zip",
+                        compression={'method': 'zip', 'archive_name': 'retention.csv'})
 
     # Process df_volumes
+    logger.debug(f"Processing df_volumes")
     df_volumes = df.groupby("date").agg(order_number=("order_number", "count"),
                                         basket_size=("basket_size", "sum")).reset_index()
-    df_volumes.to_csv("volumes.zip", compression={'method': 'zip', 'archive_name': 'volumes.csv'})
+    df_volumes.to_csv("../data/processed/volumes.zip", compression={'method': 'zip', 'archive_name': 'volumes.csv'})
 
     # Process df_users
