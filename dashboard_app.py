@@ -8,6 +8,7 @@ streamlit run dashboard_app.py
 import os
 import pandas as pd
 import streamlit as st
+from datetime import date, datetime, timedelta, time
 
 import plotly.graph_objects as go
 import plotly.express as px
@@ -235,25 +236,55 @@ def main():
 
     with row_3_col_2:
         df_top_aisles = week_occurrences.groupby("aisle")["count"].sum().reset_index()
+        df_top_aisles_prev = week_occurrences_prev.groupby("aisle")["count"].sum().reset_index()
+        df_top_aisles = df_top_aisles.merge(df_top_aisles_prev, on="aisle", suffixes=["", "_prev"])
         df_top_aisles = df_top_aisles.sort_values("count", ascending=False)[0:5]
 
-        df_top_aisles_prev = week_occurrences_prev.groupby("aisle")["count"].sum().reset_index()
-        df_top_aisles_prev = df_top_aisles_prev[df_top_aisles_prev['aisle'].isin(df_top_aisles[0:5])]
-        df_top_aisles_prev = df_top_aisles_prev.sort_values("count", ascending=False)
+        data = [
+            go.Bar(x=df_top_aisles['aisle'], y=df_top_aisles['count'], name="This week"),
+            go.Scatter(x=df_top_aisles['aisle'], y=df_top_aisles['count_prev'], name="Previous week")
+        ]
 
-        st.write()
-
-        # data = [
-        #     go.Bar(x=df_top_aisles['aisle'], y=df_top_aisles['count'], name="This week"),
-        #     # go.Scatter(x=df_prev_['date'], y=df_prev_['order_number'], name="Previous week")
-        # ]
-
-        # fig = go.Figure(data=data, layout=go.Layout(title='Top aisles',
-        #                 height=300, margin=dict(l=0, r=0, b=0, t=50)))
-        # st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        fig = go.Figure(data=data, layout=go.Layout(title='Top aisles',
+                        height=300, margin=dict(l=0, r=0, b=0, t=50)))
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     with row_3_col_3:
-        pass
+        # df_retention = load_data("data/processed/retention.zip")
+        # df_retention["date"] = pd.to_datetime(df_retention["date"])
+        # df_retention = df_retention[df_retention["date"] >= week_end - timedelta(days=30)]
+        # active_users_last_three_months = len(df_retention["user_id"].unique())
+
+        active_users_this_week = list(df_orders["user_id"].unique())
+        active_users_last_week = list(df_orders_prev["user_id"].unique())
+
+        active_users_last_two_weeks = set(active_users_last_week + active_users_this_week)
+
+        fig = go.Figure(
+            go.Indicator(
+                value=100*len(active_users_this_week)/len(active_users_last_two_weeks),
+                mode="gauge+number",
+                domain={"x": [0, 1], "y": [0, 1]},
+                number={
+                    "suffix": "_test",
+                    "font.size": 26,
+                },
+                gauge={
+                    "axis": {"range": [0, 100], "tickwidth": 1},
+                    "bar": {"color": "green"},
+                },
+                title={
+                    "text": "Active users",
+                    "font": {"size": 28},
+                },
+            )
+        )
+        fig.update_layout(
+            # paper_bgcolor="lightgrey",
+            height=200,
+            margin=dict(l=10, r=10, t=50, b=10, pad=8),
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 
 if __name__ == "__main__":
