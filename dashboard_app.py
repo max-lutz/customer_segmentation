@@ -49,6 +49,15 @@ def hide_streamlit_header_footer():
             """
     st.markdown(hide_st_style, unsafe_allow_html=True)
 
+    css = '''
+        <style>
+        section.main > div:has(~ footer ) {
+            padding-bottom: 0px;
+        }
+        </style>
+        '''
+    st.markdown(css, unsafe_allow_html=True)
+
 
 def plot_metric(number, delta_number, title):
     config = {'staticPlot': True, 'displayModeBar': False}
@@ -129,7 +138,7 @@ def main():
         #     ailse = st.selectbox('Aisle', ["All", "Aisle 1"])
 
     st.write("")
-    st.write("")
+    # st.write("")
 
     week_occurrences = get_occurrences(df_orders, df_products, df_aisles, df_departments)
     week_occurrences_prev = get_occurrences(df_orders_prev, df_products, df_aisles, df_departments)
@@ -159,7 +168,7 @@ def main():
         df_new_users_last_week = df_new_users[(df_new_users["date"] >= week_start) & (df_new_users["date"] <= week_end)]
         plot_metric(len(df_new_users_this_week), len(df_new_users_last_week), "New users")
 
-    st.write()
+    # st.write()
     row_2_col_1, _, row_2_col_2, _, row_2_col_3 = st.columns((ROW*1.5, .05, ROW, .05, ROW))
     with row_2_col_1:
         df_volumes = df_volumes[df_volumes["date"] <= pd.to_datetime(week.split("_")[0])]
@@ -169,7 +178,7 @@ def main():
         fig.add_trace(go.Bar(x=df_wv['date'], y=df_wv['order_number'], name="Orders"), secondary_y=False)
         fig.add_trace(go.Scatter(x=df_wv['date'], y=df_wv['basket_size'], name="Sold items"), secondary_y=True)
 
-        fig.update_layout(title_text="Weekly sales")
+        fig.update_layout(title_text="Weekly sales", height=300, margin=dict(l=0, r=0, b=0, t=50))
         fig.update_xaxes(title_text="week")
         fig.update_yaxes(title_text="Order volume", secondary_y=False)
         fig.update_yaxes(title_text="Items volume", secondary_y=True)
@@ -187,7 +196,8 @@ def main():
             go.Scatter(x=df_prev_['date'], y=df_prev_['order_number'], name="Previous week")
         ]
 
-        fig = go.Figure(data=data, layout=go.Layout(title='Average daily orders'))
+        fig = go.Figure(data=data, layout=go.Layout(title='Average daily orders',
+                        height=300, margin=dict(l=0, r=0, b=0, t=50)))
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     with row_2_col_3:
@@ -207,8 +217,43 @@ def main():
             go.Scatter(x=df_prev_['time_of_day'], y=df_prev_['order_number'], name="Previous week")
         ]
 
-        fig = go.Figure(data=data, layout=go.Layout(title='time of order'))
+        fig = go.Figure(data=data, layout=go.Layout(title='Time of order',
+                        height=300, margin=dict(l=0, r=0, b=0, t=50)))
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    row_3_col_1, _, row_3_col_2, _, row_3_col_3 = st.columns((ROW, .05, ROW, .05, ROW))
+    with row_3_col_1:
+        df_top_departments = week_occurrences.groupby("department")["count"].sum().reset_index()
+        df_top_departments = df_top_departments.sort_values("count", ascending=False)
+        other_count = df_top_departments[6:]["count"].sum()
+        df_top_departments = df_top_departments.append({"department": "other", "count": other_count}, ignore_index=True)
+        df_top_departments = df_top_departments.sort_values("count", ascending=False)
+
+        fig = px.pie(df_top_departments[0:7], values='count', names='department', title="Top departments")
+        fig.update_layout(height=300, margin=dict(l=0, r=0, b=0, t=50))
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    with row_3_col_2:
+        df_top_aisles = week_occurrences.groupby("aisle")["count"].sum().reset_index()
+        df_top_aisles = df_top_aisles.sort_values("count", ascending=False)[0:5]
+
+        df_top_aisles_prev = week_occurrences_prev.groupby("aisle")["count"].sum().reset_index()
+        df_top_aisles_prev = df_top_aisles_prev[df_top_aisles_prev['aisle'].isin(df_top_aisles[0:5])]
+        df_top_aisles_prev = df_top_aisles_prev.sort_values("count", ascending=False)
+
+        st.write()
+
+        # data = [
+        #     go.Bar(x=df_top_aisles['aisle'], y=df_top_aisles['count'], name="This week"),
+        #     # go.Scatter(x=df_prev_['date'], y=df_prev_['order_number'], name="Previous week")
+        # ]
+
+        # fig = go.Figure(data=data, layout=go.Layout(title='Top aisles',
+        #                 height=300, margin=dict(l=0, r=0, b=0, t=50)))
+        # st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    with row_3_col_3:
+        pass
 
 
 if __name__ == "__main__":
