@@ -8,7 +8,6 @@ streamlit run dashboard_app.py
 import os
 import pandas as pd
 import streamlit as st
-from datetime import date, datetime, timedelta, time
 
 import plotly.graph_objects as go
 import plotly.express as px
@@ -129,17 +128,7 @@ def main():
             df_orders = load_data(f"data/processed/orders_{week}.zip")
             df_orders_prev = load_data(f"data/processed/orders_{week_list[week_list.index(week)+1]}.zip")
 
-        # with button_2:
-        #     report = st.selectbox('Report', ["Sales", "Customer"])
-
-        # with button_3:
-        #     department = st.selectbox('Department', ["All", "Department 1"])
-
-        # with button_4:
-        #     ailse = st.selectbox('Aisle', ["All", "Aisle 1"])
-
     st.write("")
-    # st.write("")
 
     week_occurrences = get_occurrences(df_orders, df_products, df_aisles, df_departments)
     week_occurrences_prev = get_occurrences(df_orders_prev, df_products, df_aisles, df_departments)
@@ -148,8 +137,6 @@ def main():
     with row_1_col_1:
         plot_metric(len(df_orders["user_id"].unique()), len(df_orders_prev["user_id"].unique()), "Total users")
 
-        # st.write("Take inspiration from https://github.com/andfanilo/social-media-tutorials/blob/master/20230816-stdashboard/streamlit_app.py")
-        # st.write("and https://www.klipfolio.com/resources/dashboard-examples/sales")
     with row_1_col_2:
         plot_metric(len(df_orders["order_id"].unique()), len(df_orders_prev["order_id"].unique()), "Total orders")
 
@@ -250,14 +237,8 @@ def main():
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     with row_3_col_3:
-        # df_retention = load_data("data/processed/retention.zip")
-        # df_retention["date"] = pd.to_datetime(df_retention["date"])
-        # df_retention = df_retention[df_retention["date"] >= week_end - timedelta(days=30)]
-        # active_users_last_three_months = len(df_retention["user_id"].unique())
-
         active_users_this_week = list(df_orders["user_id"].unique())
         active_users_last_week = list(df_orders_prev["user_id"].unique())
-
         active_users_last_two_weeks = set(active_users_last_week + active_users_this_week)
 
         fig = go.Figure(
@@ -266,7 +247,7 @@ def main():
                 mode="gauge+number",
                 domain={"x": [0, 1], "y": [0, 1]},
                 number={
-                    "suffix": "_test",
+                    "suffix": "%",
                     "font.size": 26,
                 },
                 gauge={
